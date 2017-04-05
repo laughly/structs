@@ -32,6 +32,15 @@ func New(s interface{}) *Struct {
 	}
 }
 
+//like New, but pass tagName
+func NewUsingTagName(s interface{}, tagName string) *Struct {
+	return &Struct{
+		raw:     s,
+		value:   strctVal(s),
+		TagName: tagName,
+	}
+}
+
 // Map converts the given struct to a map[string]interface{}, where the keys
 // of the map are the field names and the values of the map the associated
 // values of the fields. The default key string is the struct field name but
@@ -99,7 +108,13 @@ func (s *Struct) FillMap(out map[string]interface{}) {
 		isSubStruct := false
 		var finalVal interface{}
 
-		tagName, tagOpts := parseTag(field.Tag.Get(s.TagName))
+		tagVal := field.Tag.Get(s.TagName)
+		if s.TagName == "algolia" && tagVal == "" {
+			//LAUGHLY: for algolia, omit untagged fields
+			continue
+		}
+
+		tagName, tagOpts := parseTag(tagVal)
 		if tagName != "" {
 			name = tagName
 		}
@@ -446,6 +461,11 @@ func strctVal(s interface{}) reflect.Value {
 // refer to Struct types Map() method. It panics if s's kind is not struct.
 func Map(s interface{}) map[string]interface{} {
 	return New(s).Map()
+}
+
+// refer to Struct types Map() method. It panics if s's kind is not struct.
+func MapUsingTagName(s interface{}, tagName string) map[string]interface{} {
+	return NewUsingTagName(s, tagName).Map()
 }
 
 // FillMap is the same as Map. Instead of returning the output, it fills the
